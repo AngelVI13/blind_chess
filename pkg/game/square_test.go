@@ -89,48 +89,72 @@ func FuzzNewSquareFromNotationError(f *testing.F) {
 	})
 }
 
-var out5 string = `
-test("Square fromIndex constructor", () => {
-    let square = Square.fromIndex(63);
-    expect(square).toEqual(Square.fromNotation("h8"));
+func FuzzNewSquareFromIndex(f *testing.F) {
+	f.Add(63, "h8")
+	f.Add(5, "f1")
 
-    square = Square.fromIndex(5);
-    expect(square).toEqual(Square.fromNotation("f1"));
+	f.Fuzz(func(t *testing.T, idx int, expNotation string) {
+		square, _ := NewSquareFromIndex(idx)
+		if notation := square.Notation(); notation != expNotation {
+			t.Errorf(
+				"wrong Square{notation=%s} from notation(%s)",
+				notation,
+				expNotation,
+			)
+		}
+	})
+}
 
-    // Test the validity check of index input
-    // input above upper bound
-    expect(() => Square.fromIndex(64)).toThrow('Wrong index: 64. Index should be in range [0, 63]');
-    // input below lower bound
-    expect(() => Square.fromIndex(-1)).toThrow('Wrong index: -1. Index should be in range [0, 63]');
-});
+func FuzzNewSquareFromIndexError(f *testing.F) {
+	f.Add(64)
+	f.Add(-1)
 
-test("Square color getter", () => {
-    interface SquareColor {
-        notation: string;
-        color: Color;
-    }
+	f.Fuzz(func(t *testing.T, idx int) {
+		_, err := NewSquareFromIndex(idx)
+		if err == nil {
+			t.Errorf("no error for NewSquareFromIndex(%d)", idx)
+		}
+	})
+}
 
-    let squares: SquareColor[] = [
-        // black squares
-        { notation: "a1", color: Color.Black },
-        { notation: "h8", color: Color.Black },
-        { notation: "c1", color: Color.Black },
-        { notation: "d2", color: Color.Black },
-        { notation: "f6", color: Color.Black },
-        { notation: "e5", color: Color.Black },
+func FuzzSquareColorWhite(f *testing.F) {
+	f.Add("b1")
+	f.Add("a8")
+	f.Add("c2")
+	f.Add("d3")
+	f.Add("h1")
+	f.Add("d5")
 
-        // white squares
-        { notation: "b1", color: Color.White },
-        { notation: "a8", color: Color.White },
-        { notation: "c2", color: Color.White },
-        { notation: "d3", color: Color.White },
-        { notation: "h1", color: Color.White },
-        { notation: "d5", color: Color.White },
-    ];
+	f.Fuzz(func(t *testing.T, notation string) {
+		square, _ := NewSquareFromNotation(notation)
+		if color := square.Color(); color != White {
+			t.Errorf(
+				"wrong color %s (expected: %s) for Square{notation=%s}",
+				color,
+				White,
+				notation,
+			)
+		}
+	})
+}
 
-    for (const square of squares) {
-        let sq = Square.fromNotation(square.notation);
-        expect(sq.color()).toBe(square.color);
-    }
-});
-`
+func FuzzSquareColorBlack(f *testing.F) {
+	f.Add("a1")
+	f.Add("h8")
+	f.Add("c1")
+	f.Add("d2")
+	f.Add("f6")
+	f.Add("e5")
+
+	f.Fuzz(func(t *testing.T, notation string) {
+		square, _ := NewSquareFromNotation(notation)
+		if color := square.Color(); color != Black {
+			t.Errorf(
+				"wrong color %s (expected: %s) for Square{notation=%s}",
+				color,
+				Black,
+				notation,
+			)
+		}
+	})
+}

@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-type Color int
+type Color string
 
 const (
-	White Color = iota
-	Black
+	White Color = "white"
+	Black       = "black"
 )
 
 var (
