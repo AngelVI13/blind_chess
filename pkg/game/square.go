@@ -106,41 +106,37 @@ func (s *Square) Index() int {
 	return (s.rank * 8) + s.file
 }
 
-var out4 string = `
-
-    /** Return a 64-based index of the square */
-    index(): number {
-        return (this.rank * 8) + this.file;
-    }
-
-    /** Return a notation string of the square position (ex. a1, d3 etc.) */
-    notation(): string {
-        return '${FILES[this.file]}${RANKS[this.rank]}';
-    }
-
-    /** Return an enum value of the color of the square: Black or White */
-    color(): Color {
-        // Convert index to 32-bit representation since the board pattern is the same
-        let index = this.index();
-        if (index >= 32) {
-            index = index - 32;
-        }
-
-        // Compute if square is black or white based on index 
-        // and its intersection to the color bitmask
-        const isBlack: number = (COLOR_BITBOARD >> index) & 1;
-
-        return (isBlack ? Color.Black : Color.White);
-    }
-
-    /** Check if this square is contained in an array of squares. */
-    isContained(squares: this[]): boolean {
-        for (const square of squares) {
-            if (square.index() === this.index()) {
-                return true;
-            }
-        }
-        return false;
-    }
+// Notation Return a notation string of the square position (ex a1, d3).
+func (s *Square) Notation() string {
+	return fmt.Sprintf("%s%s", Files[s.file], fmt.Sprint(Ranks[s.rank]))
 }
-`
+
+// Return the color of the square: Black or White
+func (s *Square) Color() Color {
+	// Convert index to 32-bit representation since the board pattern is the same
+	index := s.Index()
+	if index >= 32 {
+		index -= 32
+	}
+
+	// Compute if square is black or white based on index
+	// and its intersection to the color bitmask
+	isBlack := (ColorBitboard >> index) & 1
+
+	if isBlack != 0 {
+		return Black
+	}
+	return White
+}
+
+/*
+   // Check if this square is contained in an array of squares.
+   isContained(squares: this[]): boolean {
+       for (const square of squares) {
+           if (square.index() === this.index()) {
+               return true;
+           }
+       }
+       return false;
+   }
+*/
