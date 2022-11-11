@@ -1,61 +1,95 @@
 package game
 
+import (
+	"testing"
+)
+
+func FuzzNewSquare(f *testing.F) {
+	f.Add(8, 8)
+	f.Add(-1, -1)
+	f.Add(-1, 5)
+	f.Add(5, -1)
+
+	f.Fuzz(func(t *testing.T, file, rank int) {
+		_, err := NewSquare(file, rank)
+		if err == nil {
+			t.Errorf("no error for NewSquare(file=%d, rank=%d)", file, rank)
+		}
+	})
+}
+
+func FuzzSquareIndex(f *testing.F) {
+	f.Add(1, 1, 9)
+	f.Add(1, 2, 17)
+	f.Add(2, 1, 10)
+	f.Add(7, 7, 63)
+
+	f.Fuzz(func(t *testing.T, file, rank, expIdx int) {
+		square, _ := NewSquare(file, rank)
+		if idx := square.Index(); idx != expIdx {
+			t.Errorf(
+				"wrong square index(expected %d != actual %d) for Square{file=%d, rank=%d}",
+				expIdx,
+				idx,
+				file,
+				rank,
+			)
+		}
+	})
+}
+
+func FuzzSquareNotation(f *testing.F) {
+	f.Add(0, 0, "a1")
+	f.Add(1, 6, "b7")
+	f.Add(7, 7, "h8")
+
+	f.Fuzz(func(t *testing.T, file, rank int, expNotation string) {
+		square, _ := NewSquare(file, rank)
+		if notation := square.Notation(); notation != expNotation {
+			t.Errorf(
+				"wrong square notation(expected %s != actual %s) for Square{file=%d, rank=%d}",
+				expNotation,
+				notation,
+				file,
+				rank,
+			)
+		}
+	})
+}
+
+func FuzzNewSquareFromNotation(f *testing.F) {
+	f.Add("a1", 0, 0)
+	f.Add("d4", 3, 3)
+	f.Add("h7", 7, 6)
+
+	f.Fuzz(func(t *testing.T, notation string, expFile, expRank int) {
+		square, _ := NewSquareFromNotation(notation)
+		if square.file != expFile || square.rank != expRank {
+			t.Errorf(
+				"wrong Square{file=%d, rank=%d} from notation(%s)",
+				expFile,
+				expRank,
+				notation,
+			)
+		}
+	})
+}
+
+func FuzzNewSquareFromNotationError(f *testing.F) {
+	f.Add("a12")
+	f.Add("z1")
+	f.Add("bb")
+	f.Add("1a")
+
+	f.Fuzz(func(t *testing.T, notation string) {
+		_, err := NewSquareFromNotation(notation)
+		if err == nil {
+			t.Errorf("no error for NewSquareFromNotation(%s)", notation)
+		}
+	})
+}
+
 var out5 string = `
-import { Square, Color } from "./square"
-
-
-test("Square constructor", () => {
-    // TODO Is this the correct way to check that this object creation succeeds
-    expect(new Square(2, 3)).toEqual(new Square(2, 3));
-
-    // Test the validity check of rank & file inputs (should be between 0-7 inclusive)
-    expect(() => new Square(8, 8)).toThrow('Ivalid rank/file: f-8 r-8');
-    expect(() => new Square(-1, -1)).toThrow('Ivalid rank/file: f--1 r--1');
-    expect(() => new Square(-1, 5)).toThrow('Ivalid rank/file: f--1 r-5');
-    expect(() => new Square(5, -1)).toThrow('Ivalid rank/file: f-5 r--1');
-});
-
-test("Square index getter", () => {
-    let square = new Square(1, 1);
-    expect(square.index()).toBe(9);
-
-    square = new Square(7, 7);
-    expect(square.index()).toBe(63);
-});
-
-test("Square notation getter", () => {
-    let square = new Square(0, 0);
-    expect(square.notation()).toBe("a1");
-
-    square = new Square(1, 6);
-    expect(square.notation()).toBe("b7");
-
-    square = new Square(7, 7);
-    expect(square.notation()).toBe("h8");
-});
-
-test("Square fromNotation constructor", () => {
-    let square = Square.fromNotation("a1");
-    expect(square.file).toBe(0);
-    expect(square.rank).toBe(0);
-
-    square = Square.fromNotation("d4");
-    expect(square.file).toBe(3);
-    expect(square.rank).toBe(3);
-
-    square = Square.fromNotation("h7");
-    expect(square.file).toBe(7);
-    expect(square.rank).toBe(6);
-
-    // Test the validity check of notation input
-    // input too long (> 2 chars)
-    expect(() => Square.fromNotation("a12")).toThrow('Wrong square format a12');
-    // input file out of bounds
-    expect(() => Square.fromNotation("z1")).toThrow('Wrong square format z1');
-    // input rank not a valid number in range [0, 7]
-    expect(() => Square.fromNotation("aa")).toThrow('Wrong square format aa');
-});
-
 test("Square fromIndex constructor", () => {
     let square = Square.fromIndex(63);
     expect(square).toEqual(Square.fromNotation("h8"));
