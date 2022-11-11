@@ -1,5 +1,12 @@
 package game
 
+type Board struct {
+}
+
+func (b *Board) Occupied(square *Square) bool {
+	return false
+}
+
 var out string = `
 import { Piece } from "./pieces"
 import { Square } from "./square"
