@@ -35,7 +35,28 @@ func TestBoardOccupied(t *testing.T) {
 	}
 }
 
-func TestSingularSquares(t *testing.T) {
+func TestBoardMovePiece(t *testing.T) {
+	board := NewBoard()
+
+	a1, _ := NewSquareFromNotation("a1")
+	board.AddPiece(Bishop, a1)
+
+	bishop := board.pieces[0]
+
+	d6, _ := NewSquareFromNotation("d6")
+	board.MovePiece(bishop, d6)
+
+	if bishop.Square().Notation() != d6.Notation() {
+		t.Errorf(
+			"expected bishop to be on %s but is at %s",
+			d6.Notation(),
+			bishop.Square().Notation(),
+		)
+	}
+
+}
+
+func TestBoardSingularSquares(t *testing.T) {
 	board := NewBoard()
 
 	bishopSquare, _ := NewSquareFromNotation("a1")
@@ -74,7 +95,7 @@ func TestSingularSquares(t *testing.T) {
 	}
 }
 
-func FuzzPieceThatReachesSquare(f *testing.F) {
+func FuzzBoardPieceThatReachesSquare(f *testing.F) {
 	board := NewBoard()
 
 	bishopSquare, _ := NewSquareFromNotation("a1")
