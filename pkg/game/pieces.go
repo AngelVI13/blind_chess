@@ -25,7 +25,7 @@ var (
 		Diagonal...,
 	)
 
-	Knight = []DirectionVec{
+	KnightDir = []DirectionVec{
 		{file: -1, rank: -2}, // TL
 		{file: -2, rank: -1}, // TL2
 		{file: -2, rank: 1},  // BL
@@ -35,27 +35,47 @@ var (
 		{file: 2, rank: 1},   // BR
 		{file: 1, rank: 2},   // BR2
 	}
-
-	PieceAbbreviations = [...]string{"B", "R", "Q", "K", "N"}
 )
 
-type Piece interface {
-	GetMoves() []Square
+type PieceType string
+
+const (
+	Bishop PieceType = "B"
+	Knight           = "N"
+	Rook             = "R"
+	King             = "K"
+	Queen            = "Q"
+)
+
+var PieceTypes = map[PieceType]struct{}{
+	Bishop: {},
+	Knight: {},
+	Rook:   {},
+	King:   {},
+	Queen:  {},
 }
 
 type pieceProperties struct {
-	board        *Board
-	square       *Square
-	directions   []DirectionVec
-	abbreviation string
+	board      *Board
+	square     *Square
+	directions []DirectionVec
+	PieceType
+}
+
+func (p pieceProperties) Type() PieceType {
+	return p.PieceType
+}
+
+func (p pieceProperties) Square() *Square {
+	return p.square
 }
 
 type slidingPiece struct {
 	pieceProperties
 }
 
-// GetMoves Get an array of squares to which the sliding piece instance can move to.
-func (p *slidingPiece) GetMoves() []*Square {
+// Moves Get an array of squares to which the sliding piece instance can move to.
+func (p *slidingPiece) Moves() []*Square {
 	var moves []*Square
 
 	var newSquare *Square
@@ -90,8 +110,8 @@ type nonSlidingPiece struct {
 	pieceProperties
 }
 
-// GetMoves Get an array of squares to which the non-sliding piece instance can move to.
-func (p *nonSlidingPiece) GetMoves() []*Square {
+// Moves Get an array of squares to which the non-sliding piece instance can move to.
+func (p *nonSlidingPiece) Moves() []*Square {
 	var moves []*Square
 
 	for _, direction := range p.directions {
@@ -116,30 +136,57 @@ func (p *nonSlidingPiece) GetMoves() []*Square {
 	return moves
 }
 
-var out2 string = `
-
-export class Bishop extends SlidingPiece {
-    directions = DIAGONAL;
-    abbreviation = "B";
+func NewBishop(board *Board, square *Square) *slidingPiece {
+	return &slidingPiece{
+		pieceProperties{
+			directions: Diagonal,
+			PieceType:  Bishop,
+			board:      board,
+			square:     square,
+		},
+	}
 }
 
-export class Rook extends SlidingPiece {
-    directions = ORTHOGONAL;
-    abbreviation = "R";
+func NewRook(board *Board, square *Square) *slidingPiece {
+	return &slidingPiece{
+		pieceProperties{
+			directions: Orthogonal,
+			PieceType:  Rook,
+			board:      board,
+			square:     square,
+		},
+	}
 }
 
-export class Queen extends SlidingPiece {
-    directions = COMBINED;
-    abbreviation = "Q";
+func NewQueen(board *Board, square *Square) *slidingPiece {
+	return &slidingPiece{
+		pieceProperties{
+			directions: Combined,
+			PieceType:  Queen,
+			board:      board,
+			square:     square,
+		},
+	}
 }
 
-export class King extends NonSlidingPiece {
-    directions = COMBINED;
-    abbreviation = "K";
+func NewKing(board *Board, square *Square) *nonSlidingPiece {
+	return &nonSlidingPiece{
+		pieceProperties{
+			directions: Combined,
+			PieceType:  King,
+			board:      board,
+			square:     square,
+		},
+	}
 }
 
-export class Knight extends NonSlidingPiece {
-    directions = KNIGHT;
-    abbreviation = "N";
-} 
-`
+func NewKnight(board *Board, square *Square) *nonSlidingPiece {
+	return &nonSlidingPiece{
+		pieceProperties{
+			directions: KnightDir,
+			PieceType:  Knight,
+			board:      board,
+			square:     square,
+		},
+	}
+}

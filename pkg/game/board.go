@@ -1,96 +1,107 @@
 package game
 
-type Board struct {
+import "fmt"
+
+type Piece interface {
+	Moves() []*Square
+	Square() *Square
 }
 
+type Board struct {
+	pieces []Piece
+}
+
+func NewBoard() *Board {
+	return &Board{
+		pieces: make([]Piece, FileNum), // Max pieces possible
+	}
+}
+
+// Reset resets board (removes all pieces from the board).
+func (b *Board) Reset() {
+	b.pieces = make([]Piece, FileNum) // Max pieces possible
+
+}
+
+// Occupied Checks if a given square is already occupied by a piece or not.
 func (b *Board) Occupied(square *Square) bool {
+	for _, piece := range b.pieces {
+		if piece.Square().Index() == square.Index() {
+			return true
+		}
+	}
+
 	return false
 }
 
-var out string = `
-import { Piece } from "./pieces"
-import { Square } from "./square"
+// AddPiece Add a piece to the board
+func (b *Board) AddPiece(pieceType PieceType, square *Square) error {
+	var piece Piece
 
+	switch pieceType {
+	case Bishop:
+		piece = NewBishop(b, square)
+	case Knight:
+		piece = NewKnight(b, square)
+	case Rook:
+		piece = NewRook(b, square)
+	case King:
+		piece = NewKing(b, square)
+	case Queen:
+		piece = NewQueen(b, square)
+	default:
+		return fmt.Errorf("Unknow piece type %s", pieceType)
+	}
 
-export class Board {
-    pieces: Piece[];
-
-    constructor() {
-        this.pieces = [];
-    }
-
-    /** Resets board (i.e. removes all pieces from the board). */
-    reset(): void {
-        this.pieces = [];
-    }
-
-    /** Add a piece to the board */
-    addPiece(piece: Piece): void {
-        this.pieces.push(piece);
-    }
-
-    /** Checks if a given square is already occupied by a piece or not. */
-    isOccupied(square: Square): boolean {
-        const occupiedSquares = this.pieces.map(piece => piece.square);
-        return square.isContained(occupiedSquares);
-    }
-
-    /** Return an array of squares to which only 1 piece can go. */
-    getSingularSquares(): Square[] {
-        // convert move arrays for each piece into a set
-        const allMoves = this.pieces.map(piece => new Set(piece.getMoves()));
-        
-        // Calculate the symmetric difference between all moves.
-        // This results in a set of squares which cannot be reached by more than one piece.
-        const singularSquaresSet: Set<Square> = allMoves.reduce(symmetricSquareDifference);
-
-        return Array.from(singularSquaresSet);
-    }
-
-    /** Get piece object that can reach the given square. */
-    getPieceThatReachesSquare(square: Square): Piece {
-        for (const piece of this.pieces) {
-            if (square.isContained(piece.getMoves())) {
-                return piece;
-            }
-        }
-        // TODO: should this throw error or return null ?
-        return null;
-    }
+	b.pieces = append(b.pieces, piece)
+	return nil
 }
 
-/** 
- * Calculates symmetric difference between 2 sets of squares. 
- * Returns the squares which are not overlapping between the two input sets. 
- */
-const symmetricSquareDifference = (accumulator: Set<Square>, currentValue: Set<Square>, currentIndex, array) => {
-    // this implementation is taken directly from
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
-    let _difference = accumulator;
+// SingularSquares Get a slice of squares to which only 1 piece can go.
+func (b *Board) SingularSquares() []*Square {
+	var allMoves map[int]*Square
+	var duplicateSquareIdx map[int]struct{}
 
-    // conversion to array is needed in order to allow iteration over elements
-    for (let elem of Array.from(currentValue)) {
-        // convert to array for iteration and containment checks
-        const _differenceArray = Array.from(_difference);
+	// Find all duplicate squares across all piece moves
+	for _, piece := range b.pieces {
+		for _, pieceMove := range piece.Moves() {
+			sqIdx := pieceMove.Index()
 
-        // need to use specific check for presence because we are dealing with square objects
-        if (elem.isContained(_differenceArray)) {
+			_, duplicate := allMoves[sqIdx]
 
-            // iterate over all objects in accumulator array and delete
-            // the one that is contained in the currentValue
-            // NOTE: need to do a custom comparison by index
-            //       because delete() will not find the matching
-            //       object to delete as we are dealing with non-basic types
-            for (const sq of _differenceArray) {
-                if (sq.index() === elem.index()) {
-                    _difference.delete(sq);
-                }
-            }
+			if duplicate {
+				duplicateSquareIdx[sqIdx] = struct{}{}
+				continue
+			}
 
-        } else {
-            _difference.add(elem);
-        }
-    }
-    return _difference;
+			allMoves[sqIdx] = pieceMove
+		}
+	}
+
+	var singularSquares []*Square
+	for _, sq := range allMoves {
+		_, duplicate := duplicateSquareIdx[sq.Index()]
+
+		if duplicate {
+			continue
+		}
+
+		singularSquares = append(singularSquares, sq)
+	}
+
+	return singularSquares
 }
-`
+
+// PieceThatReachesSquare Get piece object that can reach the given square.
+func (b *Board) PieceThatReachesSquare(square *Square) Piece {
+	sqIdx := square.Index()
+
+	for _, piece := range b.pieces {
+		for _, pieceMove := range piece.Moves() {
+			if sqIdx == pieceMove.Index() {
+				return piece
+			}
+		}
+	}
+	return nil
+}
