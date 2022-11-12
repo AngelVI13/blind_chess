@@ -70,6 +70,10 @@ func (p pieceProperties) Square() *Square {
 	return p.square
 }
 
+func (p *pieceProperties) SetSquare(square *Square) {
+	p.square = square
+}
+
 type slidingPiece struct {
 	pieceProperties
 }

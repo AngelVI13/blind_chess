@@ -5,6 +5,7 @@ import "fmt"
 type Piece interface {
 	Moves() []*Square
 	Square() *Square
+	SetSquare(*Square)
 	Type() PieceType
 }
 
@@ -105,4 +106,9 @@ func (b *Board) PieceThatReachesSquare(square *Square) Piece {
 		}
 	}
 	return nil
+}
+
+// MovePiece Moves a piece from one location to another.
+func (b *Board) MovePiece(piece Piece, toSquare *Square) {
+	piece.SetSquare(toSquare)
 }
