@@ -35,47 +35,84 @@ func TestBoardOccupied(t *testing.T) {
 	}
 }
 
-var out1 string = `
+func TestSingularSquares(t *testing.T) {
+	board := NewBoard()
 
-test("Board getSingularSquares", () => {
-    const board = new Board();
+	bishopSquare, _ := NewSquareFromNotation("a1")
+	board.AddPiece(Bishop, bishopSquare)
 
-    const squareBishop = Square.fromNotation("a1");
-    const bishop = new Bishop(squareBishop, board);
+	knightSquare, _ := NewSquareFromNotation("b1")
+	board.AddPiece(Knight, knightSquare)
 
-    const squareKnight = Square.fromNotation("b1");
-    const knight = new Knight(squareKnight, board);
+	squares := board.SingularSquares()
 
-    board.addPiece(bishop);
-    board.addPiece(knight);
+	expected := []string{"b2", "d4", "e5", "f6", "g7", "h8", "a3", "d2"}
 
-    const moves = board.getSingularSquares()
-    expect(moves.length).toBe(8);
+	if len(squares) != len(expected) {
+		t.Errorf(
+			"expected %d singular squares but got %d instead",
+			len(expected),
+			len(squares),
+		)
+	}
 
-    // expect square which can be reached by both pieces to not be in the array of moves
-    expect(Square.fromNotation("c3").isContained(moves)).toBeFalsy();
+	for _, expNotation := range expected {
+		found := false
 
-    const expectedMoves: string[] = ["b2", "d4", "e5", "f6", "g7", "h8", "a3", "d2"];
-    for (const expectedMove of expectedMoves) {
-        expect(Square.fromNotation(expectedMove).isContained(moves)).toBeTruthy();
-    }
-});
+		for _, sq := range squares {
+			if sq.Notation() == expNotation {
+				found = true
+			}
+		}
 
-test("Board getPieceThatReachesSquare", () => {
-    const board = new Board();
+		if !found {
+			t.Errorf(
+				"expected %s to be a singular square but its not",
+				expNotation,
+			)
+		}
+	}
+}
 
-    const squareBishop = Square.fromNotation("a1");
-    const bishop = new Bishop(squareBishop, board);
+func FuzzPieceThatReachesSquare(f *testing.F) {
+	board := NewBoard()
 
-    const squareKnight = Square.fromNotation("b1");
-    const knight = new Knight(squareKnight, board);
+	bishopSquare, _ := NewSquareFromNotation("a1")
+	board.AddPiece(Bishop, bishopSquare)
 
-    board.addPiece(bishop);
-    board.addPiece(knight);
+	knightSquare, _ := NewSquareFromNotation("b1")
+	board.AddPiece(Knight, knightSquare)
 
-    expect(board.getPieceThatReachesSquare(Square.fromNotation("b2"))).toBe(bishop);
-    expect(board.getPieceThatReachesSquare(Square.fromNotation("a3"))).toBe(knight);
-    expect(board.getPieceThatReachesSquare(Square.fromNotation("d8"))).toBeNull();
-    expect(board.getPieceThatReachesSquare(Square.fromNotation("e2"))).toBeNull();
-});
-`
+	f.Add("b2", string(Bishop))
+	f.Add("c3", string(Bishop))
+	f.Add("d4", string(Bishop))
+	f.Add("h8", string(Bishop))
+
+	f.Add("a3", string(Knight))
+	f.Add("d2", string(Knight))
+
+	f.Add("d8", "")
+	f.Add("e3", "")
+	f.Add("c4", "")
+	f.Add("e2", "")
+
+	f.Fuzz(func(t *testing.T, notation, expPieceType string) {
+		sq, _ := NewSquareFromNotation(notation)
+
+		piece := board.PieceThatReachesSquare(sq)
+
+		pieceType := ""
+		if piece != nil {
+			pieceType = string(piece.Type())
+		}
+
+		if pieceType != expPieceType {
+			t.Errorf(
+				"expected %s to be reached by %s but got '%s'",
+				notation,
+				string(expPieceType),
+				pieceType,
+			)
+		}
+	})
+}

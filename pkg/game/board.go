@@ -5,6 +5,7 @@ import "fmt"
 type Piece interface {
 	Moves() []*Square
 	Square() *Square
+	Type() PieceType
 }
 
 type Board struct {
@@ -59,8 +60,8 @@ func (b *Board) AddPiece(pieceType PieceType, square *Square) error {
 
 // SingularSquares Get a slice of squares to which only 1 piece can go.
 func (b *Board) SingularSquares() []*Square {
-	var allMoves map[int]*Square
-	var duplicateSquareIdx map[int]struct{}
+	var allMoves = map[int]*Square{}
+	var duplicateSquareIdx = map[int]struct{}{}
 
 	// Find all duplicate squares across all piece moves
 	for _, piece := range b.pieces {
