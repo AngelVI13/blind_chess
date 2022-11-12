@@ -1,7 +1,6 @@
 package game
 
 import (
-	"log"
 	"testing"
 )
 
@@ -21,7 +20,6 @@ func TestBoardOccupied(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		log.Print(sq, board)
 
 		if i == square.Index() {
 			if !board.Occupied(sq) {
