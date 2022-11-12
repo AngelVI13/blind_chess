@@ -1,29 +1,41 @@
 package game
 
+import (
+	"log"
+	"testing"
+)
+
+func TestBoardOccupied(t *testing.T) {
+	board := NewBoard()
+	square, err := NewSquareFromNotation("a1")
+	if err != nil {
+		t.Error(err)
+	}
+
+	board.AddPiece(Bishop, square)
+
+	// Iterate over all possible square indices and check that
+	// none of them are occupied (except for the index on which the bishop stands)
+	for i := 0; i < 64; i++ {
+		sq, err := NewSquareFromIndex(i)
+		if err != nil {
+			t.Error(err)
+		}
+		log.Print(sq, board)
+
+		if i == square.Index() {
+			if !board.Occupied(sq) {
+				t.Errorf("square should be occupied but isn't idx=%d", i)
+			}
+		} else {
+			if board.Occupied(sq) {
+				t.Errorf("square shouldn't be occupied but it is idx=%d", i)
+			}
+		}
+	}
+}
+
 var out1 string = `
-import { Board } from "./board"
-import { Bishop, Knight } from "./pieces"
-import { Square } from "./square"
-
-test("Board isOccupied", () => {
-    // NOTE: this also checks Square.isContained functionality
-    const board = new Board();
-
-    const square = Square.fromNotation("a1");
-    const bishop = new Bishop(square, board);
-
-    board.addPiece(bishop);
-    
-    // Iterate over all possible square indices and check that
-    // none of them are occupied (except for the index on which the bishop stands)
-    for (let i = 0; i < 64; i++ ) {
-        if (i !== square.index()) {
-            expect(board.isOccupied(Square.fromIndex(i))).toBeFalsy();
-        } else {
-            expect(board.isOccupied(Square.fromIndex(i))).toBeTruthy();
-        }
-    }
-});
 
 test("Board getSingularSquares", () => {
     const board = new Board();

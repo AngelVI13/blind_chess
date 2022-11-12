@@ -13,13 +13,13 @@ type Board struct {
 
 func NewBoard() *Board {
 	return &Board{
-		pieces: make([]Piece, FileNum), // Max pieces possible
+		pieces: make([]Piece, 0, FileNum), // Max pieces possible
 	}
 }
 
 // Reset resets board (removes all pieces from the board).
 func (b *Board) Reset() {
-	b.pieces = make([]Piece, FileNum) // Max pieces possible
+	b.pieces = make([]Piece, 0, FileNum) // Max pieces possible
 
 }
 
