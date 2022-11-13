@@ -112,3 +112,24 @@ func (b *Board) PieceThatReachesSquare(square *Square) Piece {
 func (b *Board) MovePiece(piece Piece, toSquare *Square) {
 	piece.SetSquare(toSquare)
 }
+
+// TODO: Is this needed
+var out string = `
+/** Gets the square where a given piece is located. */
+    getSquareForPiece(piece: PieceType): Square {
+        // Iterate over all the squares on the board
+        // For every square, check to see if it is occupied by the given piece.
+        for (let i = 0; i < 64; i++) {
+            const square = SquareFunctions.fromIndex(i);
+            const pieceAtSquare = this.chess.get(square);
+
+            if (!!pieceAtSquare) {
+              if (piece === pieceAtSquare.type) {
+                  return square;
+              }
+            }
+        }
+
+        throw new Error('Cannot find square for a given piece: ' + piece);
+    }
+`
