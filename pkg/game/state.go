@@ -1,154 +1,130 @@
 package game
 
-var out1 string = `
-import Board, { PieceOption } from './board';
-import SquareFunctions from "./square"
-import { PieceType, Square } from "chess.js"
+import (
+	"math/rand"
+)
 
+type State int
 
-export enum States {
-    PRE_GAME,
-    COUNTDOWN,
-    PLAY,
-    BETWEEN,
-    LEVEL_UP,
-    GAME_OVER,
-    WIN
+const (
+	PreGame State = iota
+	Countdown
+	Play
+	Between
+	LevelUp
+	GameOver
+	Win
+)
+
+var (
+	// Levels for every level add the corresponding piece to the board
+	Levels   = []PieceType{Bishop, Knight, Rook, King, Queen}
+	MaxLevel = len(Levels)
+)
+
+const QuestionsPerLevel = 10
+
+type Game struct {
+	board     *Board
+	currState State
+	level     int
+	score     int
+
+	questionSquare         *Square
+	pieceForQuestionSquare Piece
 }
 
-interface GameStatus {
-    levelUp: boolean,
-    win: boolean,
+func New() *Game {
+	return &Game{
+		board:                  NewBoard(),
+		currState:              PreGame,
+		level:                  0,
+		score:                  0,
+		questionSquare:         nil,
+		pieceForQuestionSquare: nil,
+	}
 }
 
-export default class GameState {
-    // for every level add the corresponding piece to the board
-    readonly LEVELS = [
-        'b',// Bishop
-        'n',// Knight
-        'r',// Rook
-        'k',// King
-        'q', // Queen
-    ];
-    readonly QUESTIONS_PER_LEVEL = 10;
-    readonly MAX_LEVEL = this.LEVELS.length;
+// SetupPreGame Reset board and set 2 initial pieces
+func (g *Game) SetupPreGame() {
+	g.currState = PreGame
+	g.level = 0
+	g.score = 0
+	g.questionSquare = nil
+	g.pieceForQuestionSquare = nil
 
-    board: Board;
-    currentState: States;
-    level: number;
-    score: number;
+	g.board.Reset()
 
-    square: Square;
-    pieceForSquare: PieceOption;
+	// Compute initial piece positions
+	idx1 := generateSquareIndex()
+	idx2 := generateSquareIndex()
 
-    levelUpPiece: PieceOption;
+	for idx1 == idx2 {
+		idx2 = generateSquareIndex()
+	}
 
-    constructor() {
-        this.board = new Board();
-        this.currentState = States.PRE_GAME;
-        this.level = 0;
-        this.score = 0;
+	knightSquare, _ := NewSquareFromIndex(idx1)
+	g.board.AddPiece(Knight, knightSquare)
 
-        // question square & piece that can reach it is assigned after game
-        // is already setup
-        this.square = "" as any;
-        this.pieceForSquare = "" as any;
-        this.levelUpPiece = "" as any;
-
-        this.chooseSquareAndPiece = this.chooseSquareAndPiece.bind(this);
-        this.updateScore = this.updateScore.bind(this);
-        this.generateSquareIndex = this.generateSquareIndex.bind(this);
-    }
-
-    /** Reset board and set 2 initial pieces */
-    setupPreGame() {
-        this.currentState = States.PRE_GAME;
-        this.level = 0;
-        this.score = 0;
-        this.square = "" as any;
-        this.pieceForSquare = "" as any;
-        this.levelUpPiece = "" as any;
-
-        this.board.reset();
-
-        // Compute initial piece positions
-        let num1 = this.generateSquareIndex();
-        let num2: number;
-
-        do {
-            num2 = this.generateSquareIndex();
-        } while (num1 === num2);
-
-        this.board.addPiece('n', SquareFunctions.fromIndex(num1));
-        this.board.addPiece('b', SquareFunctions.fromIndex(num2));
-    }
-
-    startGame() {
-        this.chooseSquareAndPiece();
-    }
-
-    /** Generates the next position of the board by moving the chosen piece. 
-        Return true if level up is hit otherwise, false.
-    */
-    setNextPosition(): GameStatus {
-        this.board.movePiece(this.pieceForSquare, this.square);
-
-        let gameStatus = this.updateScore();
-        this.chooseSquareAndPiece();
-
-        return gameStatus;
-    }
-
-    /** Chooses a singular square and the piece that can reach it. */
-    chooseSquareAndPiece() {
-        const squares = this.board.getSingularSquares();
-        const num = Math.floor(Math.random() * squares.length);
-
-        this.square = squares[num];
-
-        try {
-            this.pieceForSquare = this.board.getPieceThatReachesSquare(this.square);
-        } catch(e) {
-            console.log(e);
-        }
-    }
-
-    /** Updates the score after a correct answer and levels up if necessary. */
-    updateScore(): GameStatus {
-        let levelUp = false;
-        this.score += 1;
-
-        // the +1 here is needed because the score starts from 0
-        if (this.score === ((this.MAX_LEVEL * this.QUESTIONS_PER_LEVEL) + 1)) {
-            // game over - the player won
-            return { levelUp: levelUp, win: true }
-        }
-
-
-        if (this.score % this.QUESTIONS_PER_LEVEL === 0) {
-            console.log('level up');
-
-            let i: number;
-
-            do {
-              i = this.generateSquareIndex();
-            } while (this.board.isOccupied(SquareFunctions.fromIndex(i)));
-
-            let piece = this.LEVELS[this.level] as PieceType;
-            this.board.addPiece(piece, SquareFunctions.fromIndex(i));
-            
-            this.level += 1;
-            this.levelUpPiece = {
-                piece: piece,
-                square: SquareFunctions.fromIndex(i)
-            }
-            levelUp = true;
-        }
-        return { levelUp: levelUp, win: false};
-    }
-
-    generateSquareIndex(): number {
-        return Math.floor(Math.random() * 64);
-    }
+	bishopSquare, _ := NewSquareFromIndex(idx2)
+	g.board.AddPiece(Bishop, bishopSquare)
 }
-`
+
+// chooseSquareAndPiece Chooses a singular square and the piece that can reach it.
+func (g *Game) chooseSquareAndPiece() {
+	squares := g.board.SingularSquares()
+
+	g.questionSquare = squares[rand.Intn(len(squares))]
+	g.pieceForQuestionSquare = g.board.PieceThatReachesSquare(g.questionSquare)
+}
+
+func (g *Game) StartGame() {
+	g.chooseSquareAndPiece()
+}
+
+// SetNextPosition Generates the next position of the board by moving the chosen piece.
+// Return true if level up is hit otherwise, false.
+func (g *Game) SetNextPosition() bool {
+	g.board.MovePiece(g.pieceForQuestionSquare, g.questionSquare)
+
+	levelUp, _ := g.updateScore()
+	g.chooseSquareAndPiece()
+
+	return levelUp
+}
+
+// updateScore Updates the score after a correct answer and levels up if necessary.
+func (g *Game) updateScore() (levelUp, win bool) {
+	g.score += 1
+
+	// the +1 here is needed because the score starts from 0
+	if g.score == ((MaxLevel * QuestionsPerLevel) + 1) {
+		// game over - the player won
+		win = true
+		return levelUp, win
+	}
+
+	if g.score%QuestionsPerLevel == 0 {
+		var idx int
+		var sq *Square
+
+		for {
+			idx = generateSquareIndex()
+			sq, _ = NewSquareFromIndex(idx)
+			if !g.board.Occupied(sq) {
+				break
+			}
+		}
+
+		newPiece := Levels[g.level]
+		g.board.AddPiece(newPiece, sq)
+
+		g.level++
+		levelUp = true
+	}
+	return levelUp, win
+}
+
+func generateSquareIndex() int {
+	return rand.Intn(FileNum * RankNum)
+}
