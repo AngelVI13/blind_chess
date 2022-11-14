@@ -32,6 +32,8 @@ type Game struct {
 
 	questionSquare         *Square
 	pieceForQuestionSquare Piece
+
+	levelUpPiece Piece
 }
 
 func New() *Game {
@@ -42,7 +44,20 @@ func New() *Game {
 		score:                  0,
 		questionSquare:         nil,
 		pieceForQuestionSquare: nil,
+		levelUpPiece:           nil,
 	}
+}
+
+func (g *Game) BoardPieces() []Piece {
+	return g.board.pieces
+}
+
+func (g *Game) LevelUpPiece() Piece {
+	return g.levelUpPiece
+}
+
+func (g *Game) CheckAnswer(piece PieceType) bool {
+	return piece == g.pieceForQuestionSquare.Type()
 }
 
 // SetupPreGame Reset board and set 2 initial pieces
@@ -52,6 +67,7 @@ func (g *Game) SetupPreGame() {
 	g.score = 0
 	g.questionSquare = nil
 	g.pieceForQuestionSquare = nil
+	g.levelUpPiece = nil
 
 	g.board.Reset()
 
@@ -80,6 +96,10 @@ func (g *Game) chooseSquareAndPiece() {
 
 func (g *Game) StartGame() {
 	g.chooseSquareAndPiece()
+}
+
+func (g *Game) QuestionPieceAndSquare() (Piece, *Square) {
+	return g.pieceForQuestionSquare, g.questionSquare
 }
 
 // SetNextPosition Generates the next position of the board by moving the chosen piece.
@@ -118,6 +138,7 @@ func (g *Game) updateScore() (levelUp, win bool) {
 
 		newPiece := Levels[g.level]
 		g.board.AddPiece(newPiece, sq)
+		g.levelUpPiece = g.board.pieces[len(g.board.pieces)-1]
 
 		g.level++
 		levelUp = true

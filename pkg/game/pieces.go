@@ -40,11 +40,11 @@ var (
 type PieceType string
 
 const (
-	Bishop PieceType = "B"
-	Knight           = "N"
-	Rook             = "R"
-	King             = "K"
-	Queen            = "Q"
+	Bishop PieceType = "Bishop"
+	Knight           = "Knight"
+	Rook             = "Rook"
+	King             = "King"
+	Queen            = "Queen"
 )
 
 var PieceTypes = map[PieceType]struct{}{
