@@ -28,12 +28,12 @@ type Game struct {
 	board     *Board
 	currState State
 	level     int
-	score     int
+	Score     int
 
 	questionSquare         *Square
 	pieceForQuestionSquare Piece
 
-	levelUpPiece Piece
+	LevelUpPiece Piece
 }
 
 func New() *Game {
@@ -41,10 +41,10 @@ func New() *Game {
 		board:                  NewBoard(),
 		currState:              PreGame,
 		level:                  0,
-		score:                  0,
+		Score:                  0,
 		questionSquare:         nil,
 		pieceForQuestionSquare: nil,
-		levelUpPiece:           nil,
+		LevelUpPiece:           nil,
 	}
 }
 
@@ -52,22 +52,40 @@ func (g *Game) BoardPieces() []Piece {
 	return g.board.pieces
 }
 
-func (g *Game) LevelUpPiece() Piece {
-	return g.levelUpPiece
+func (g *Game) PieceTypes() []PieceType {
+	var pieceTypes []PieceType
+	var seen = map[PieceType]struct{}{}
+
+	for _, p := range g.BoardPieces() {
+		pieceType := p.Type()
+
+		if _, ok := seen[pieceType]; ok {
+			continue
+		}
+
+		seen[pieceType] = struct{}{}
+		pieceTypes = append(pieceTypes, pieceType)
+	}
+
+	return pieceTypes
 }
 
 func (g *Game) CheckAnswer(piece PieceType) bool {
 	return piece == g.pieceForQuestionSquare.Type()
 }
 
+func (g *Game) Level() int {
+	return g.level + 1 // level is used as index -> return real level number
+}
+
 // SetupPreGame Reset board and set 2 initial pieces
 func (g *Game) SetupPreGame() {
 	g.currState = PreGame
 	g.level = 0
-	g.score = 0
+	g.Score = 0
 	g.questionSquare = nil
 	g.pieceForQuestionSquare = nil
-	g.levelUpPiece = nil
+	g.LevelUpPiece = nil
 
 	g.board.Reset()
 
@@ -115,16 +133,16 @@ func (g *Game) SetNextPosition() bool {
 
 // updateScore Updates the score after a correct answer and levels up if necessary.
 func (g *Game) updateScore() (levelUp, win bool) {
-	g.score += 1
+	g.Score += 1
 
 	// the +1 here is needed because the score starts from 0
-	if g.score == ((MaxLevel * QuestionsPerLevel) + 1) {
+	if g.Score == ((MaxLevel * QuestionsPerLevel) + 1) {
 		// game over - the player won
 		win = true
 		return levelUp, win
 	}
 
-	if g.score%QuestionsPerLevel == 0 {
+	if g.Score%QuestionsPerLevel == 0 {
 		var idx int
 		var sq *Square
 
@@ -138,7 +156,7 @@ func (g *Game) updateScore() (levelUp, win bool) {
 
 		newPiece := Levels[g.level]
 		g.board.AddPiece(newPiece, sq)
-		g.levelUpPiece = g.board.pieces[len(g.board.pieces)-1]
+		g.LevelUpPiece = g.board.pieces[len(g.board.pieces)-1]
 
 		g.level++
 		levelUp = true
